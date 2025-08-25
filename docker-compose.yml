@@ -1,0 +1,58 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15
+    container_name: omokane_postgres
+    environment:
+      - POSTGRES_DB=directus
+      - POSTGRES_USER=directus
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  directus:
+    image: directus/directus:latest
+    container_name: omokane_directus
+    ports:
+      - "8055:8055"
+    environment:
+      - KEY=${KEY}
+      - SECRET=${SECRET}
+      - DB_CLIENT=pg
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_DATABASE=directus
+      - DB_USER=directus
+      - DB_PASSWORD=${DB_PASSWORD}
+      - ADMIN_EMAIL=${ADMIN_EMAIL}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
+    volumes:
+      - uploads:/directus/uploads
+    depends_on:
+      - postgres
+    restart: unless-stopped
+
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: omokane_n8n
+    ports:
+      - "5678:5678"
+    volumes:
+      - n8n_data:/home/node/.n8n
+    restart: unless-stopped
+
+  llm_api:
+    build: ./services/llm_api
+    container_name: omokane_llm_api
+    ports:
+      - "8001:8000"
+    environment:
+      - LM_STUDIO_API_URL=${LM_STUDIO_API_URL}
+    restart: unless-stopped
+
+volumes:
+  db_data:
+  uploads:
+  n8n_data:
